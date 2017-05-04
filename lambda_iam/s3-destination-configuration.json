@@ -1,0 +1,50 @@
+{
+  "RoleARN": "arn:aws:iam::AWS_ACCOUNT_NUMBER:role/firehose_delivery_role",
+  "BucketARN": "arn:aws:s3:::BUCKET_NAME",
+  "Prefix": "processed/",
+  "BufferingHints": {
+    "SizeInMBs": 5,
+    "IntervalInSeconds": 60
+  },
+  "CompressionFormat": "UNCOMPRESSED",
+  "CloudWatchLoggingOptions": {
+    "Enabled": true,
+    "LogGroupName": "web_analytics",
+    "LogStreamName": "web_analytics_firehose_success"
+  },
+  "ProcessingConfiguration": {
+    "Enabled": true,
+    "Processors": [
+      {
+        "Type": "Lambda",
+        "Parameters": [
+          {
+            "ParameterName": "LambdaArn",
+            "ParameterValue": "arn:aws:lambda:AWS_REGION:AWS_ACCOUNT_NUMBER:function:firehoseDeliveryTransformationFunction"
+          },
+          {
+            "ParameterName": "NumberOfRetries",
+            "ParameterValue": "3"
+          }
+        ]
+      }
+    ]
+  },
+  "S3BackupMode": "Enabled",
+  "S3BackupConfiguration": {
+    "RoleARN": "arn:aws:iam::AWS_ACCOUNT_NUMBER:role/firehose_delivery_role",
+    "BucketARN": "arn:aws:s3:::BUCKET_NAME",
+    "Prefix": "tranformation_failed_data_backup/",
+    "BufferingHints": {
+      "SizeInMBs": 5,
+      "IntervalInSeconds": 60
+    },
+    "CompressionFormat": "UNCOMPRESSED",
+  
+    "CloudWatchLoggingOptions": {
+      "Enabled": true,
+      "LogGroupName": "web_analytics",
+      "LogStreamName": "web_analytics_firehose_data_backup"
+    }
+  }
+}

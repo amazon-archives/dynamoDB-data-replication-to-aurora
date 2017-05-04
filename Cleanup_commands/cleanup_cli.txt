@@ -1,0 +1,25 @@
+aws iam delete-role-policy --policy-name aurora-s3-access-Policy  --role-name aurora_s3_access_role
+aws iam delete-role --role-name aurora_s3_access_role
+aws rds delete-db-cluster-parameter-group --db-cluster-parameter-group-name webAnayticsclusterParamGroup
+aws dynamodb delete-table --table-name web_analytics
+aws iam delete-role-policy --policy-name DdbStreamProcessingAccessPolicy  --role-name DdbStreamLambdaRole
+aws iam delete-role --role-name DdbStreamLambdaRole
+aws lambda delete-function --function-name WebAnalyticsDdbStreamFunction 
+
+aws iam delete-role-policy --policy-name firehose_lambda_transformation_AccessPolicy  --role-name firehose_delivery_lambda_transformation_role
+
+aws iam delete-role --role-name firehose_delivery_lambda_transformation_role
+
+
+aws iam delete-role-policy --policy-name firehose_delivery_AccessPolicy  --role-name firehose_delivery_role
+aws iam delete-role --role-name firehose_delivery_role
+
+aws firehose delete-delivery-stream --delivery-stream-name webAnalytics
+
+aws iam delete-role-policy --policy-name lambda-aurora-AccessPolicy  --role-name lambda_aurora_role
+aws iam delete-role --role-name lambda_aurora_role
+
+
+
+aws lambda delete-function --function-name firehoseDeliveryTransformationFunction
+aws lambda delete-function --function-name AuroraDataManagementFunction 

@@ -1,0 +1,41 @@
+{
+    "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": "lambda:InvokeFunction",
+                "Resource": "arn:aws:lambda:AWS_REGION:AWS_ACCOUNT_NUMBER:function:WebAnalyticsDdbStreamProcessingFunction"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DescribeStream",
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:ListStreams"
+                ],
+                "Resource": "arn:aws:dynamodb:AWS_REGION:AWS_ACCOUNT_NUMBER:table/web_analytics/stream/*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "firehose:DeleteDeliveryStream",
+                    "firehose:PutRecord",
+                    "firehose:PutRecordBatch",
+                    "firehose:UpdateDestination"
+                ],
+                "Resource": [
+                    "arn:aws:firehose:AWS_REGION:AWS_ACCOUNT_NUMBER:deliverystream/webAnalytics"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                ],
+                "Resource": "*"
+            }
+        ]
+}

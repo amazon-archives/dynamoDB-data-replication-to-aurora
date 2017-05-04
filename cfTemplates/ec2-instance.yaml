@@ -1,0 +1,161 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Launches a EC2 t2.micro into public subnet and assigns a EIP'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - VpcId
+      - SubnetId
+      - InstanceType
+      - Ec2Name
+      - KeypairName      
+      - S3BucketForAMILookup
+Parameters:
+  VpcId:
+    Description: 'VPC Identifier'
+    Type: String
+  SubnetId:
+    Description: 'Public Subnet to launch the bastion host in'
+    Type: String        
+  Ec2Name:
+    Description: 'The name for the EC2 instance.'
+    Type: String
+    Default: 'BastionHost'  
+  KeypairName:
+    Description: 'Key pair name to establish a RDP connection to the Bastion host EC2 instance.'
+    Type: String
+  InstanceType:
+    Description: 'The instance type for the EC2 instance.'
+    Type: String
+    Default: 't2.micro'
+    AllowedValues:
+    - 't2.micro'
+  S3BucketForAMILookup:
+    Description: 'The name of the bucket that contains your packaged source for AMI Lookup'
+    Type: String
+  DatabasePassword:        
+        Type: String
+  DatabaseUsername:        
+        Type: String        
+  DatabaseEndpoint:
+        Type: String
+Resources:
+  ElasticIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      InstanceId: !Ref BastionHost
+      Domain: vpc
+  
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SSH bastion sec group"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+  
+  AMIInfoFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+        Code:
+            S3Bucket: !Ref S3BucketForAMILookup
+            S3Key: 'amilookup.zip'
+        Handler: 'amilookup.handler'
+        Runtime: nodejs4.3
+        Timeout: 30
+        Role: !GetAtt LambdaExecutionRole.Arn
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+        AssumeRolePolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                - lambda.amazonaws.com
+              Action:
+              - sts:AssumeRole
+        Path: '/'
+        Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: arn:aws:logs:*:*:*
+            - Effect: Allow
+              Action:
+              - ec2:DescribeImages
+              Resource: "*"
+
+  AMIInfo:
+    Type: Custom::AMIInfo
+    Properties:
+        ServiceToken: !GetAtt AMIInfoFunction.Arn
+        Region: !Ref "AWS::Region"
+        Architecture: 'HVM64'          
+  
+  BastionHost:
+    Type: 'AWS::EC2::Instance'
+    CreationPolicy:
+      ResourceSignal:
+        Count: '1'
+        Timeout: PT30M
+    Properties:
+      SubnetId: !Ref SubnetId      
+      ImageId: !GetAtt AMIInfo.Id
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+      - !Ref SecurityGroup
+      KeyName: !Ref KeypairName
+      Tags:
+      - Key: Name
+        Value: !Ref Ec2Name
+      
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash
+            # Update all packages
+            yum -y update
+            # Install mysql client 
+            yum -y install mysql
+
+            yum update -y aws-cfn-bootstrap
+
+            /usr/bin/mysql -h ${DatabaseEndpoint} -u ${DatabaseUsername} --password=${DatabasePassword} << EOF
+
+            create database Demo;
+
+            CREATE TABLE Demo.WebAnalytics (
+            timestarted VARCHAR(100),
+            page_id VARCHAR(100),
+            hits int,
+            start_time VARCHAR(100),
+            end_time VARCHAR(100),
+            country_code  VARCHAR(100),
+            PRIMARY KEY (page_id)
+            );
+            EOF
+
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource BastionHost  --region ${AWS::Region}
+   
+  
+Outputs:
+  BastionHostEip:
+    Description: 'The public IP address of the EC2 instance.'
+    Value: !Ref ElasticIP
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", 'ElasticIp' ] ]

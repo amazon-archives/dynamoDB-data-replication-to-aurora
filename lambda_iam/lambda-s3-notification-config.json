@@ -1,0 +1,19 @@
+{  
+  "LambdaFunctionConfigurations": [
+    {
+      "Id": "Demo",
+      "LambdaFunctionArn": "arn:aws:lambda:AWS_REGION:AWS_ACCOUNT_NUMBER:function:AuroraDataManagementFunction",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": {
+        "Key": {
+          "FilterRules": [
+            {
+              "Name": "prefix",
+              "Value": "processed/2"
+            }            
+          ]
+        }
+      }
+    }    
+  ]
+}

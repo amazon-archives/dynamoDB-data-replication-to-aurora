@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates VPC and RDS Aurora
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Network and EC2 configuration'
+      Parameters:
+      - ClassB
+      - Ec2InstanceType
+      - Ec2Name
+      - KeypairName
+      - S3BucketForAMILookup
+    - Label:
+        default: 'Amazon Aurora configuration'
+      Parameters:
+      - DatabaseInstanceType
+      - DatabaseUsername
+      - DatabasePassword
+      - DatabaseBackupRetentionPeriod
+            
+Parameters:
+  Ec2InstanceType:
+        Description: 'The instance type for the Bastion host EC2 instance.'
+        Type: String
+        Default: 't2.micro'
+        AllowedValues:
+        - 't2.micro'
+  Ec2Name:
+        Description: 'The name for the Bastion host EC2 instance.'
+        Type: String
+        Default: 'demo-BastionHost'  
+  KeypairName:
+        Default: 'demoKeyPair'
+        Description: 'Key pair name to establish a RDP connection to the Bastion host EC2 instance.'
+        Type: String
+  ClassB:
+        Description: 'Class B of VPC (10.XXX.0.0/16)'
+        Type: Number
+        Default: 110
+        ConstraintDescription: 'Must be in the range [0-255]'
+        MinValue: 0
+        MaxValue: 255
+  DatabaseInstanceType:
+        Default: db.t2.medium
+        AllowedValues:
+            - db.r3.large
+            - db.t2.medium
+        Description: The instance type to use for the database.
+        Type: String
+  DatabasePassword:
+        AllowedPattern: "[a-zA-Z0-9]+"
+        ConstraintDescription: must contain only alphanumeric characters.
+        Description: The database admin account password.
+        MaxLength: '30'
+        MinLength: '8'
+        NoEcho: 'true'
+        Type: String
+  DatabaseUsername:
+        AllowedPattern: "[a-zA-Z0-9]+"
+        ConstraintDescription: must contain only alphanumeric characters.
+        Description: The database admin account user name.
+        MaxLength: '16'
+        MinLength: '1'
+        Type: String
+        Default: 'dbUser1'
+  DatabaseBackupRetentionPeriod:
+        Type: String
+        Default: 1
+        AllowedValues:
+            - 1
+            - 10
+            - 20
+        Description: The database backup retention period in days.
+  S3BucketForAMILookup:
+    Default: 'ddbtoaurorademo'
+    Description: 'The name of an existing S3 bucket that contains your packaged source for AMI Lookup and Cloudformation templates'
+    Type: String        
+Resources:
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join [ "/", [ 'https://s3.amazonaws.com', !Ref S3BucketForAMILookup, 'Networking.yaml' ] ] 
+      TimeoutInMinutes: '5'
+      Parameters:
+        ClassB: !Ref ClassB
+  Ec2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join [ "/", [ 'https://s3.amazonaws.com', !Ref S3BucketForAMILookup, 'ec2-instance.yaml' ] ] 
+      TimeoutInMinutes: '30'
+      Parameters:
+        VpcId: !GetAtt NetworkStack.Outputs.VPC
+        SubnetId: !GetAtt NetworkStack.Outputs.SubnetBPublic
+        InstanceType: !Ref Ec2InstanceType
+        Ec2Name: !Ref Ec2Name
+        KeypairName: !Ref KeypairName
+        S3BucketForAMILookup: !Ref S3BucketForAMILookup
+        DatabasePassword: !Ref DatabasePassword
+        DatabaseUsername: !Ref DatabaseUsername
+        DatabaseEndpoint: !GetAtt DatabaseStack.Outputs.AuroraEndpoint
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join [ "/", [ 'https://s3.amazonaws.com', !Ref S3BucketForAMILookup, 'Aurora.yaml' ] ] 
+      TimeoutInMinutes: '30'
+      Parameters:
+        VPCId: !GetAtt NetworkStack.Outputs.VPC
+        DatabaseBackupRetentionPeriod: !Ref DatabaseBackupRetentionPeriod
+        DatabaseInstanceType: !Ref DatabaseInstanceType
+        DatabasePassword: !Ref DatabasePassword
+        DatabaseUsername: !Ref DatabaseUsername
+        DatabaseSubnets: !Join [ ",", [ !GetAtt NetworkStack.Outputs.SubnetAPrivate, !GetAtt NetworkStack.Outputs.SubnetBPrivate ] ]
+Outputs:
+  AuroraEndpoint:
+    Value: !GetAtt DatabaseStack.Outputs.AuroraEndpoint
+    Description: 'Aurora Endpoint address'
+  AuroraClusterId:
+    Value: !GetAtt DatabaseStack.Outputs.DBClusterId
+    Description: 'Aurora Cluster Id'
+  PrimaryInstanceId:
+      Value: !GetAtt DatabaseStack.Outputs.PrimaryInstanceId
+      Description: 'Primary DB Instance Id'
+  BastionHostEip:
+    Value: !GetAtt Ec2Stack.Outputs.BastionHostEip
+    Description: 'BastionHost Eip'
+  PrivateSubnets:
+    Value: !Join [ ",", [ !GetAtt NetworkStack.Outputs.SubnetAPrivate, !GetAtt NetworkStack.Outputs.SubnetBPrivate ] ]
+    Description: 'Private Subnets'
+  DefaultSecurityGroupId:
+    Value: !GetAtt NetworkStack.Outputs.DefaultSecurityGroup
