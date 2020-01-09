@@ -67,7 +67,7 @@ Resources:
             S3Bucket: !Ref S3BucketForAMILookup
             S3Key: 'amilookup.zip'
         Handler: 'amilookup.handler'
-        Runtime: nodejs4.3
+        Runtime: nodejs10.x
         Timeout: 30
         Role: !GetAtt LambdaExecutionRole.Arn
 
