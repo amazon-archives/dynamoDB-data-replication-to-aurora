@@ -92,9 +92,14 @@ Resources:
             - Effect: Allow
               Action:
               - logs:CreateLogGroup
+              Resource: '*'
+            - Effect: Allow
+              Action:
               - logs:CreateLogStream
               - logs:PutLogEvents
-              Resource: arn:aws:logs:*:*:*
+              Resource:
+                - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/AMILookup
+                - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/AMILookup:log-stream:ami-lookup-stream
             - Effect: Allow
               Action:
               - ec2:DescribeImages

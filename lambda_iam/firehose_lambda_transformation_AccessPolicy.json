@@ -4,13 +4,20 @@
         {
             "Effect": "Allow",
             "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "config:*",
-                "cloudwatch:*"
+                "logs:CreateLogGroup"
             ],
             "Resource": "*"
+        },
+        {   
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:firehose-lambda-trans-loggroup:log-stream:log-stream:firehose-lambda-trans-logstream",
+                "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:firehose-lambda-trans-loggroup"
+            ]
         }
     ]
 }

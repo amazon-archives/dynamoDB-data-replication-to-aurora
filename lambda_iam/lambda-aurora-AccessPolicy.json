@@ -4,14 +4,29 @@
     {
       "Effect": "Allow",
       "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
         "ec2:CreateNetworkInterface",
         "ec2:DescribeNetworkInterfaces",
         "ec2:DeleteNetworkInterface"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+          "logs:CreateLogGroup"
+      ],
+      "Resource": "*"
+    },
+    {   
+        "Effect": "Allow",
+        "Action": [
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+        ],
+        "Resource": [
+            "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:lambda-aurora-loggroup:log-stream:log-stream:lambda-aurora-logstream",
+            "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:lambda-aurora-loggroup"
+        ]
     }
   ]
 }
