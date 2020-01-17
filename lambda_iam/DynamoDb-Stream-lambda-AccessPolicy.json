@@ -31,11 +31,20 @@
             {
                 "Effect": "Allow",
                 "Action": [
-                    "logs:CreateLogGroup",
+                    "logs:CreateLogGroup"
+                ],
+                "Resource": "*"
+            },
+            {   
+                "Effect": "Allow",
+                "Action": [
                     "logs:CreateLogStream",
                     "logs:PutLogEvents"
                 ],
-                "Resource": "*"
+                "Resource": [
+                    "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:ddb-stream-lambda-loggroup:log-stream:log-stream:ddb-stream-lambda-stream",
+                    "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:ddb-stream-lambda-loggroup"
+                ]
             }
         ]
 }

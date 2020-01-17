@@ -33,7 +33,7 @@
         "logs:PutLogEvents"
       ],
       "Resource": [
-        "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:/aws/kinesisfirehose/webAnalytics:log-stream:*"
+        "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_NUMBER:log-group:/aws/kinesisfirehose/webAnalytics:log-stream:firehose-delivery"
       ]
     }
   ]
